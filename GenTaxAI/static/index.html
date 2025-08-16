@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GenTaxAI Chatbot</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    #chatbox { border: 1px solid #ccc; padding: 10px; height: 400px; overflow-y: scroll; }
+    .message { margin: 10px 0; }
+    .user { color: blue; }
+    .assistant { color: green; }
+    input[type=text] { width: 80%; padding: 10px; }
+    button { padding: 10px; }
+  </style>
+</head>
+<body>
+  <h1>GenTaxAI Chatbot</h1>
+  <div id="chatbox"></div>
+  <input type="text" id="userInput" placeholder="Ask a question..." />
+  <button onclick="sendMessage()">Send</button>
+
+  <script>
+    // Unique session ID for the user
+    const sessionId = "user_" + Date.now();
+
+    const chatbox = document.getElementById("chatbox");
+    const input = document.getElementById("userInput");
+
+    function addMessage(text, role) {
+      const div = document.createElement("div");
+      div.className = `message ${role}`;
+      div.innerText = (role === "user" ? "You: " : "Bot: ") + text;
+      chatbox.appendChild(div);
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const question = input.value.trim();
+      if (!question) return;
+      addMessage(question, "user");
+      input.value = "";
+
+      try {
+        const res = await fetch("http://127.0.0.1:8000/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id: sessionId, question }),
+        });
+        const data = await res.json();
+        if (data.answer) {
+          addMessage(data.answer, "assistant");
+        } else {
+          addMessage("No response from server.", "assistant");
+        }
+      } catch (err) {
+        addMessage("Error connecting to server.", "assistant");
+        console.error(err);
+      }
+    }
+
+    // Optional: send message on Enter key
+    input.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
+  </script>
+</body>
+</html>
